@@ -1,0 +1,381 @@
+## 3/15/2026
+cd /Users/hyung/Dropbox/LB_developmental
+
+
+
+####
+mkdir -p ./subjects_dir ./out_phi ./out_dict
+
+  
+## for all ages
+
+python3 compute_infant_phi_lapy.py \
+  --ages all \
+  --subjects-dir ./subjects_dir \
+  --outdir ./out_phi \
+  --K 50 \
+  --spacing oct6 \
+  --surface white \
+  --combine block
+
+
+python3 make_infant_lb_dictionary.py \
+  --ages all \
+  --subjects-dir ./subjects_dir \
+  --outdir ./out_dict \
+  --K 50 \
+  --spacing oct6 \
+  --surface white \
+  --combine block \
+  --montage-kind template1020
+ 
+
+#python3 inspect_saved_dicts.py
+
+ 
+
+## "Age-specific cortical harmonic coordinates co-move with cortical growth"
+python3 plot_mode_physical_scale.py \
+  --eigdir ./out_fullmesh_phi \
+  --K 30 \
+  --outfig ./figures_mode_atlas/mode_physical_scale.png \
+  --outcsv ./figures_mode_atlas/mode_physical_scale.csv \
+  --modes 2,3,4,5,8,12 \
+  --show-normalized
+
+
+## "Forward-projected scalp gain is concentrated in lower cortical harmonic orders"
+python3 summarize_transfer_heatmap.py \
+  --dictdir ./out_dict \
+  --outdir ./figures_transfer \
+  --target-k 50 \
+  --surface white \
+  --combine block \
+  --montage-kind template1020 \
+  --max-order-plot 25
+
+
+
+#python3 summarize_transfer_bandwidth.py \
+  --outdir ./out_dict \
+  --figdir ./figures_transfer \
+  --target-k 50 \
+  --surface white \
+  --combine block \
+  --montage-kind template1020
+
+
+
+
+### "Developmental basis mismatch has practical consequences in sensor space"
+## analysis 1: neighboring age analysis 
+
+python3 analyze_age_mismatch_sensor.py \
+  --outdir ./out_dict \
+  --figdir ./figures_age_mismatch_sensor \
+  --target-k 50 \
+  --analysis-k 5 \
+  --surface white \
+  --combine block \
+  --montage-kind template1020 \
+  --prior-kind balanced \
+  --n-patterns 1000 \
+  --neighbor-only
+
+python3 symmetrize_sensor_mismatch.py \
+  --csv ./figures_age_mismatch_sensor/sensor_age_mismatch_summary_K50_AK5_white_block_template1020.csv \
+  --outdir ./figures_age_mismatch_sensor_sym
+
+
+python3 make_sensor_mismatch_table_rows.py \
+  --csv ./figures_age_mismatch_sensor_allpairs_sym/sensor_age_mismatch_summary_K50_AK5_white_block_template1020_symmetrized.csv
+
+ 
+
+
+### "Developmental basis mismatch has practical consequences in sensor space"
+## analysis 2: adult vs. infant basis comparison  (update 3/28/2026)
+ 
+# Step 1. Compute the adult full-mesh basis
+
+python3 compute_template_fullmesh_lapy.py \
+  --subjects-dir ./subjects_dir \
+  --subject fsaverage \
+  --surface white \
+  --sphere-surf sphere.reg \
+  --K 50 \
+  --outdir ./out_adult_fullmesh_phi
+
+
+# Step 2. Build the adult-on-infant analysis dictionaries
+
+python3 make_adult_on_infant_lb_dictionary.py \
+  --adult-eig ./out_adult_fullmesh_phi/fsaverage_fullmesh_lb_white_sphere.reg_K50.npz \
+  --infant-dictdir ./out_dict \
+  --subjects-dir ./subjects_dir \
+  --target-k 50 \
+  --surface white \
+  --combine block \
+  --montage-kind template1020 \
+  --outdir ./out_dict_adult_on_infant
+
+
+# Step 3. Run the matched benchmark
+
+python3 simulate_recoverability_basis_mismatch.py \
+  --gendir ./out_dict \
+  --analysisdir ./out_dict \
+  --analysis-mode matched \
+  --target-k 50 \
+  --analysis-k 10 \
+  --surface white \
+  --combine block \
+  --montage-kind template1020 \
+  --snr-db-list 20,10,0 \
+  --prior-kind equal \
+  --n-reps 100 \
+  --n-time 600 \
+  --pair-hemispheres \
+  --outdir ./figures_recoverability_matched
+
+
+Step 4. Run the adult-mismatch analysis
+
+python3 simulate_recoverability_basis_mismatch.py \
+  --gendir ./out_dict \
+  --analysisdir ./out_dict_adult_on_infant \
+  --analysis-mode adult_mismatch \
+  --target-k 50 \
+  --analysis-k 10 \
+  --surface white \
+  --combine block \
+  --montage-kind template1020 \
+  --snr-db-list 20,10,0 \
+  --prior-kind equal \
+  --n-reps 100 \
+  --n-time 600 \
+  --pair-hemispheres \
+  --outdir ./figures_recoverability_adult_mismatch
+
+# Step 5. Compare them (For the heatmap, you need the version with: --matched-raw-csv; --mismatch-raw-csv)
+
+python3 compare_recoverability_basis_mismatch.py \
+  --matched-csv ./figures_recoverability_matched/recoverability_summary.csv \
+  --mismatch-csv ./figures_recoverability_adult_mismatch/recoverability_summary.csv \
+  --outdir ./figures_recoverability_basis_mismatch \
+  --metric mean_corr_first10
+ 
+
+
+
+
+######## not presented.. 
+#python3 simulate_recoverability.py \
+  --outdir ./out_dict \
+  --figdir ./figures_recoverability \
+  --target-k 50 \
+  --analysis-k 10 \
+  --surface white \
+  --combine block \
+  --montage-kind template1020 \
+  --snr-db-list 20,10,0 \
+  --n-reps 30 \
+  --n-time 600 \
+  --prior-kind balanced \
+  --estimator bayes \
+  --pair-hemispheres \
+  --save-raw
+
+## sensitivity
+#python3 simulate_recoverability.py \
+  --outdir ./out_dict \
+  --figdir ./figures_recoverability \
+  --target-k 50 \
+  --analysis-k 20 \
+  --surface white \
+  --combine block \
+  --montage-kind template1020 \
+  --snr-db-list 20,10,0 \
+  --n-reps 100 \
+  --n-time 600 \
+  --prior-kind decay \
+  --estimator bayes \
+  --pair-hemispheres \
+  --save-raw
+
+
+#I would keep these as the main step-1 summaries:
+	•	AK10, balanced, 20 dB
+	•	AK10, balanced, 10 dB
+	•	AK20, balanced, 10 dB
+	•	AK20, decay, 10 dB as sensitivity
+
+
+
+
+#### "Independently computed cortical LB modes are only locally comparable across age" 
+## updated 3/19/2026
+
+python3 compute_infant_fullmesh_lapy.py \
+  --ages all \
+  --subjects-dir ./subjects_dir \
+  --outdir ./out_fullmesh_phi \
+  --K 30 \
+  --surface white \
+  --sphere-surf sphere.reg \
+  --keep-largest-component \
+  --null-tol 1e-10
+
+
+python3 analyze_age_mismatch_cortical.py \
+  --eigdir ./out_fullmesh_phi \
+  --outdir ./figures_age_mismatch_cortical \
+  --K 30 \
+  --neighbor-only \
+  --plot-top-k 20
+  
+ 
+
+
+## additional plots
+python3 plot_cortical_sym_summary.py \
+  --csv ./figures_age_mismatch_cortical/cortical_age_mismatch_symmetrized_K30.csv \
+  --outfig ./figures_age_mismatch_cortical/cortical_sym_summary_main.png \
+  --save-hemi-figure
+
+# for optional 3 panel figure..
+python3 plot_cortical_sym_summary_main3.py \
+  --csv ./figures_age_mismatch_cortical/cortical_age_mismatch_symmetrized_K30.csv \
+  --outfig ./figures_age_mismatch_cortical/cortical_sym_summary_main3.png
+
+
+
+
+python3 analyze_coefficient_mismatch.py \
+  --eigdir-source ./out_fullmesh_phi \
+  --outdir ./figures_coeff_mismatch \
+  --K 30 \
+  --hemi both \
+  --neighbor-only \
+  --families onehot,packet,random \
+  --packet-width 1.0 \
+  --n-random 200 \
+  --random-decay 1.0 \
+  --save-heatmaps \
+  --plot-top-k 20 
+
+python3 symmetrize_coefficient_mismatch.py \
+  --csv ./figures_coeff_mismatch/coefficient_mismatch_detail_K30.csv \
+  --outdir ./figures_coeff_mismatch_sym \
+  --save-hemi-figure
+
+
+
+
+
+
+##  "Modes in more crowded local eigenvalue neighborhoods are harder to match across age"
+
+python3 analyze_mode_crowding.py \
+  --eigdir ./out_fullmesh_phi \
+  --outdir ./figures_mode_crowding \
+  --K 30 \
+  --neighbor-only \
+  --nbins 6
+
+
+## "Both cortical-basis and forward-operator changes contribute to neighboring-age sensor-space mismatch"
+
+python3 analyze_geometry_head_decomposition.py \
+  --dictdir ./out_dict \
+  --subjects-dir ./subjects_dir \
+  --outdir ./figures_geometry_head_decomp \
+  --target-k 50 \
+  --analysis-k 5 \
+  --surface white \
+  --combine block \
+  --montage-kind template1020 \
+  --prior-kind balanced \
+  --n-patterns 1000 \
+  --neighbor-only
+
+
+
+## "Sequential Procrustes tracking improves same-index neighboring-age consistency"
+# 3/24/2026
+
+python3 track_modes_procrustes.py \
+  --eigdir ./out_fullmesh_phi \
+  --tracked-outdir ./out_fullmesh_phi_tracked \
+  --summary-outdir ./figures_mode_tracking \
+  --K 30 \
+  --block-size 3
+ 
+# raw basis
+python3 analyze_coefficient_mismatch.py \
+  --eigdir-source ./out_fullmesh_phi \
+  --outdir ./figures_coeff_mismatch_raw \
+  --K 30 \
+  --hemi both \
+  --neighbor-only \
+  --families onehot,packet,random \
+  --packet-width 1.0 \
+  --n-random 200 \
+  --random-decay 1.0 \
+  --save-heatmaps \
+  --plot-top-k 20 \
+  --heatmap-metric energy
+
+python3 symmetrize_coefficient_mismatch.py \
+  --csv ./figures_coeff_mismatch_raw/coefficient_mismatch_detail_K30.csv \
+  --outdir ./figures_coeff_mismatch_raw_sym
+
+# tracked / age-aligned basis
+python3 analyze_coefficient_mismatch.py \
+  --eigdir-source ./out_fullmesh_phi_tracked \
+  --outdir ./figures_coeff_mismatch_tracked \
+  --K 30 \
+  --hemi both \
+  --neighbor-only \
+  --families onehot,packet,random \
+  --packet-width 1.0 \
+  --n-random 200 \
+  --random-decay 1.0 \
+  --save-heatmaps \
+  --plot-top-k 20 \
+  --heatmap-metric energy
+
+python3 symmetrize_coefficient_mismatch.py \
+  --csv ./figures_coeff_mismatch_tracked/coefficient_mismatch_detail_K30.csv \
+  --outdir ./figures_coeff_mismatch_tracked_sym
+
+
+python3 compare_coefficient_mismatch_before_after.py \
+  --before-csv ./figures_coeff_mismatch_raw_sym/coefficient_mismatch_detail_K30_symmetrized_avghemi.csv \
+  --after-csv ./figures_coeff_mismatch_tracked_sym/coefficient_mismatch_detail_K30_symmetrized_avghemi.csv \
+  --outdir ./figures_coeff_mismatch_before_after
+
+
+
+
+
+
+
+
+### for Figure 1
+python3 plot_developmental_mode_atlas.py \
+  --eigdir ./out_fullmesh_phi \
+  --subjects-dir ./subjects_dir \
+  --outfig ./figures_mode_atlas/developmental_mode_atlas_lh_full.png \
+  --K 30 \
+  --hemi lh \
+  --figscale 1.3 \
+  --modes 2,3,4,5 \
+  --ages 2wk,2mo,6mo,2yr \
+  --surface pial \
+  --sphere-surf sphere.reg \
+  --columnwise-scale \
+  --dpi 400
+
+
+ 
