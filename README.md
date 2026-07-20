@@ -1,5 +1,5 @@
-# infant-cortical-harmonics
-Code and files for reproducing the main figures and tables from the paper "Age-dependent spatial transfer of cortical harmonics to scalp EEG in infancy." 
+# Template-based analysis of age-dependent cortical eigenmodes in infancy
+Code and files for reproducing the main figures and tables from the paper "Template-based analysis of age-dependent cortical eigenmodes and scalp EEG forward transfer in infancy." 
  
 The repository is designed to reproduce the core results of the paper. It includes code for reproducing:
 
