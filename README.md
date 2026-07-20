@@ -170,6 +170,10 @@ python3 analyze_age_mismatch_sensor.py \
 python3 symmetrize_sensor_mismatch.py \
   --csv ./figures_age_mismatch_sensor/sensor_age_mismatch_summary_K50_AK5_white_block_template1020.csv \
   --outdir ./figures_age_mismatch_sensor_sym
+
+
+# a sensitivity analysis for sensor-space age mismatch by running metric computations and symmetrization across multiple modes per hemisphere (AK=3,5,7).
+./run_sensor_mismatch_AK_sensitivity.sh
 ```
 
 ### Adult-derived versus infant basis recoverability
@@ -317,4 +321,9 @@ python3 compare_coefficient_mismatch_before_after.py \
   --before-csv ./figures_coeff_mismatch_raw_sym/coefficient_mismatch_detail_K30_symmetrized_avghemi.csv \
   --after-csv ./figures_coeff_mismatch_tracked_sym/coefficient_mismatch_detail_K30_symmetrized_avghemi.csv \
   --outdir ./figures_coeff_mismatch_before_after
+
+
+# Sequential Procrustes block-size sensitivity analysis
+./run_procrustes_block_sensitivity_all.sh
+
 ```
